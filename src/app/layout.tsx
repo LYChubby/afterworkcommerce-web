@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans, Playfair_Display } from "next/font/google";
+import { AuthProvider } from "@/features/auth/providers/auth-provider";
 
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -30,7 +31,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={cn("h-full", "antialiased", notoSans.variable, playfairDisplay.variable, geistMono.variable, "font-sans")}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
