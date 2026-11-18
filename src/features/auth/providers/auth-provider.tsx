@@ -1,15 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { AuthServiceError, exchangeGoogleCode, getCurrentUser, logout as logoutService } from "@/features/auth/services/auth-service";
 
-import type { AuthUser } from "@/types/auth";
+import type { UserProfile } from "@/types/auth";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 interface AuthContextValue {
-  user: AuthUser | null;
+  user: UserProfile | null;
   status: AuthStatus;
   error: string | null;
   loginWithGoogleCode: (code: string) => Promise<void>;
@@ -24,42 +24,52 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [error, setError] = useState<string | null>(null);
 
+  const operationRef = useRef(0);
+
   const refreshUser = useCallback(async () => {
-    setStatus("loading");
+    const operation = ++operationRef.current;
+
     setError(null);
 
     try {
       const currentUser = await getCurrentUser();
 
+      if (operation !== operationRef.current) return;
+
       setUser(currentUser);
       setStatus("authenticated");
     } catch (error) {
+      if (operation !== operationRef.current) return;
+
       setUser(null);
       setStatus("unauthenticated");
 
-      if (error instanceof AuthServiceError && error.status !== 401) {
+      if (error instanceof Error) {
         setError(error.message);
       }
+
+      throw error;
     }
   }, []);
 
   useEffect(() => {
     let active = true;
+    const operation = ++operationRef.current;
 
     async function initializeAuth() {
       try {
         const currentUser = await getCurrentUser();
 
-        if (!active) return;
+        if (!active || operation !== operationRef.current) return;
 
         setUser(currentUser);
         setStatus("authenticated");
       } catch (error) {
-        if (!active) return;
+        if (!active || operation !== operationRef.current) return;
 
         setUser(null);
         setStatus("unauthenticated");
@@ -78,20 +88,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const loginWithGoogleCode = useCallback(async (code: string) => {
+    const operation = ++operationRef.current;
+
     setStatus("loading");
     setError(null);
 
     try {
-      const authenticatedUser = await exchangeGoogleCode(code);
+      await exchangeGoogleCode(code);
 
-      setUser(authenticatedUser);
+      const currentUser = await getCurrentUser();
+
+      if (operation !== operationRef.current) return;
+
+      setUser(currentUser);
       setStatus("authenticated");
     } catch (error) {
-      setUser(null);
-      setStatus("unauthenticated");
+      if (operation === operationRef.current) {
+        setUser(null);
+        setStatus("unauthenticated");
 
-      if (error instanceof Error) {
-        setError(error.message);
+        if (error instanceof Error) {
+          setError(error.message);
+        }
       }
 
       throw error;
@@ -99,19 +117,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const logout = useCallback(async () => {
+    const operation = ++operationRef.current;
+
     setError(null);
 
     try {
       await logoutService();
+
+      if (operation !== operationRef.current) return;
+
+      setUser(null);
+      setStatus("unauthenticated");
     } catch (error) {
-      if (error instanceof Error) {
+      if (operation === operationRef.current && error instanceof Error) {
         setError(error.message);
       }
 
       throw error;
-    } finally {
-      setUser(null);
-      setStatus("unauthenticated");
     }
   }, []);
 
