@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { AuthServiceError, exchangeGoogleCode, getCurrentUser, logout as logoutService } from "@/features/auth/services/auth-service";
+import { AuthServiceError, exchangeGoogleCode, getCurrentUser, loginWithEmailPassword, logout as logoutService } from "@/features/auth/services/auth-service";
 
 import type { UserProfile } from "@/types/auth";
 
@@ -13,6 +13,7 @@ interface AuthContextValue {
   status: AuthStatus;
   error: string | null;
   loginWithGoogleCode: (code: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<UserProfile>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -116,6 +117,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const loginWithEmail = useCallback(async (email: string, password: string): Promise<UserProfile> => {
+    const operation = ++operationRef.current;
+
+    setStatus("loading");
+    setError(null);
+
+    try {
+      await loginWithEmailPassword(email, password);
+
+      const currentUser = await getCurrentUser();
+
+      if (operation !== operationRef.current) {
+        return currentUser;
+      }
+
+      setUser(currentUser);
+      setStatus("authenticated");
+      setError(null);
+
+      return currentUser;
+    } catch (error) {
+      if (operation === operationRef.current) {
+        setUser(null);
+        setStatus("unauthenticated");
+
+        if (error instanceof AuthServiceError) {
+          setError(error.message);
+        } else {
+          setError("Unable to complete authentication.");
+        }
+      }
+
+      throw error;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     const operation = ++operationRef.current;
 
@@ -144,6 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         status,
         error,
         loginWithGoogleCode,
+        loginWithEmail,
         refreshUser,
         logout,
       }}
