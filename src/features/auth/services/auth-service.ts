@@ -71,3 +71,15 @@ export async function logout(): Promise<void> {
     method: "POST",
   });
 }
+
+export async function loginWithEmailPassword(email: string, password: string): Promise<AuthUser> {
+  const result = await request<{ user: AuthUser }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+
+  return result.user;
+}
