@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { AuthServiceError, exchangeGoogleCode, getCurrentUser, loginWithEmailPassword, logout as logoutService } from "@/features/auth/services/auth-service";
+import { AuthServiceError, exchangeGoogleCode, getCurrentUser, loginWithEmailPassword, registerWithEmailPassword, logout as logoutService } from "@/features/auth/services/auth-service";
 
 import type { UserProfile } from "@/types/auth";
 
@@ -14,6 +14,7 @@ interface AuthContextValue {
   error: string | null;
   loginWithGoogleCode: (code: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<UserProfile>;
+  registerWithEmail: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<UserProfile>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -120,7 +121,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const loginWithEmail = useCallback(async (email: string, password: string): Promise<UserProfile> => {
     const operation = ++operationRef.current;
 
-    setStatus("loading");
     setError(null);
 
     try {
@@ -146,6 +146,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setError(error.message);
         } else {
           setError("Unable to complete authentication.");
+        }
+      }
+
+      throw error;
+    }
+  }, []);
+
+  const registerWithEmail = useCallback(async (name: string, email: string, password: string, passwordConfirmation: string): Promise<UserProfile> => {
+    const operation = ++operationRef.current;
+
+    setError(null);
+
+    try {
+      await registerWithEmailPassword(name, email, password, passwordConfirmation);
+
+      const currentUser = await getCurrentUser();
+
+      if (operation !== operationRef.current) {
+        return currentUser;
+      }
+
+      setUser(currentUser);
+      setStatus("authenticated");
+      setError(null);
+
+      return currentUser;
+    } catch (error) {
+      if (operation === operationRef.current) {
+        setUser(null);
+        setStatus("unauthenticated");
+
+        if (error instanceof AuthServiceError) {
+          setError(error.message);
+        } else {
+          setError("Unable to complete registration.");
         }
       }
 
@@ -182,6 +217,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error,
         loginWithGoogleCode,
         loginWithEmail,
+        registerWithEmail,
         refreshUser,
         logout,
       }}

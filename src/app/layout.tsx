@@ -1,38 +1,43 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans, Playfair_Display } from "next/font/google";
-import { AuthProvider } from "@/features/auth/providers/auth-provider";
 
+import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { SiteLayout } from "@/components/layout/site-layout";
 import { cn } from "@/lib/utils";
+
 import "./globals.css";
 
 const notoSans = Noto_Sans({
+  variable: "--font-noto-sans",
   subsets: ["latin"],
-  variable: "--font-sans",
 });
 
 const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
-  variable: "--font-heading",
 });
 
 const geistMono = Geist_Mono({
-  subsets: ["latin"],
   variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "AFTERWORK-COMMERCE",
-    template: "%s | AFTERWORK-COMMERCE",
-  },
-  description: "Discover your style with AFTERWORK-COMMERCE.",
+  title: "AFTERWORK-COMMERCE",
+  description: "Discover Your Everyday Elegance.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: LayoutProps) {
   return (
-    <html lang="id" className={cn("h-full", "antialiased", notoSans.variable, playfairDisplay.variable, geistMono.variable, "font-sans")}>
+    <html lang="id" className={cn(notoSans.variable, playfairDisplay.variable, geistMono.variable, "font-sans")}>
       <body className="flex min-h-full flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SiteLayout>{children}</SiteLayout>
+        </AuthProvider>
       </body>
     </html>
   );

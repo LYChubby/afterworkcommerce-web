@@ -83,3 +83,17 @@ export async function loginWithEmailPassword(email: string, password: string): P
 
   return result.user;
 }
+
+export async function registerWithEmailPassword(name: string, email: string, password: string, passwordConfirmation: string): Promise<AuthUser> {
+  const result = await request<{ user: AuthUser }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      password_confirmation: passwordConfirmation,
+    }),
+  });
+
+  return result.user;
+}
