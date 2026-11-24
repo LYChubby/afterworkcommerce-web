@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AddressServiceError, getAddress, updateAddress } from "@/features/addresses/services/address-service";
+import { useNotification } from "@/components/ui/notification-provider";
 import type { AddressPayload } from "@/types/address";
 
 interface AddressFormData {
@@ -43,6 +44,7 @@ export default function EditAddressPage() {
   const params = useParams<{ uuid: string }>();
   const uuid = params.uuid;
   const router = useRouter();
+  const { notify } = useNotification();
 
   const [formData, setFormData] = useState<AddressFormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,10 +122,22 @@ export default function EditAddressPage() {
 
     try {
       await updateAddress(uuid, payload);
+
+      notify("success", {
+        title: "Alamat berhasil diperbarui",
+        description: "Perubahan informasi alamat berhasil disimpan.",
+      });
+
       router.push("/addresses");
       router.refresh();
     } catch (err) {
-      setError(err instanceof AddressServiceError ? err.message : "Terjadi kesalahan saat memperbarui alamat.");
+      const message = err instanceof AddressServiceError ? err.message : "Terjadi kesalahan saat memperbarui alamat.";
+
+      notify("error", {
+        title: "Gagal memperbarui alamat",
+        description: message,
+        confirmLabel: "Mengerti",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -212,8 +226,10 @@ export default function EditAddressPage() {
                 <input
                   id="phone"
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
+                  onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, ""))}
                   maxLength={30}
                   required
                   autoComplete="tel"
@@ -305,8 +321,10 @@ export default function EditAddressPage() {
                 </label>
                 <input
                   id="postal_code"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.postal_code}
-                  onChange={(event) => updateField("postal_code", event.target.value)}
+                  onChange={(event) => updateField("postal_code", event.target.value.replace(/\D/g, ""))}
                   maxLength={10}
                   required
                   autoComplete="postal-code"
@@ -354,12 +372,6 @@ export default function EditAddressPage() {
               <span className="block text-xs leading-5 text-muted-foreground">Alamat ini akan menjadi alamat utama untuk pengiriman.</span>
             </span>
           </label>
-
-          {error && (
-            <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
 
           <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
             <Button asChild variant="outline" disabled={isSubmitting}>
