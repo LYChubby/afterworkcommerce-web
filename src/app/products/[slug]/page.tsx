@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchProductApi } from "@/features/products/services/product-api";
 import ProductGallery from "./ProductGallery";
-import ProductVariants from "./ProductVariants";
+import ProductPurchase from "./ProductPurchase";
 import type { Product } from "@/types/product";
 
 type ProductDetailPageProps = {
@@ -76,45 +76,43 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           <ProductGallery images={currentProduct.images} productName={currentProduct.name} />
 
           <div className="space-y-6">
-            <h1 className="text-2xl font-semibold text-[#243D2D] sm:text-3xl">{currentProduct.name}</h1>
+            <div>
+              <h1 className="text-2xl font-semibold text-[#243D2D] sm:text-3xl">{currentProduct.name}</h1>
 
-            <p className="mt-2 text-sm text-[#7B8176]">{currentProduct.category?.name ?? "Uncategorized"}</p>
+              <p className="mt-2 text-sm text-[#7B8176]">{currentProduct.category?.name ?? "Uncategorized"}</p>
 
-            <p className="mt-4 text-xl font-semibold text-[#243D2D]">
-              {new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                maximumFractionDigits: 0,
-              }).format(Number(currentProduct.effective_price))}
-            </p>
-
-            {currentProduct.is_on_sale && currentProduct.discount_price && (
-              <p className="mt-1 text-sm text-[#7B8176] line-through">
+              <p className="mt-4 text-xl font-semibold text-[#243D2D]">
                 {new Intl.NumberFormat("id-ID", {
                   style: "currency",
                   currency: "IDR",
                   maximumFractionDigits: 0,
-                }).format(Number(currentProduct.price))}
+                }).format(Number(currentProduct.effective_price))}
               </p>
-            )}
 
-            <p className="mt-4 text-sm text-[#526454]">{currentProduct.total_available_stock > 0 ? `Stok tersedia: ${currentProduct.total_available_stock}` : "Stok habis"}</p>
+              {currentProduct.is_on_sale && currentProduct.discount_price && (
+                <p className="mt-1 text-sm text-[#7B8176] line-through">
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    maximumFractionDigits: 0,
+                  }).format(Number(currentProduct.price))}
+                </p>
+              )}
 
-            <ProductVariants variants={currentProduct.variants} />
+              <p className="mt-4 text-sm text-[#526454]">{currentProduct.total_available_stock > 0 ? `Stok tersedia: ${currentProduct.total_available_stock}` : "Stok habis"}</p>
+            </div>
 
-            {currentProduct.description && (
-              <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-                <ProductGallery images={currentProduct.images} productName={currentProduct.name} />
-
-                <div className="space-y-6">
-                  <h2 className="text-lg font-semibold text-[#243D2D]">Deskripsi Produk</h2>
-
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[#526454]">{currentProduct.description}</p>
-                </div>
-              </div>
-            )}
+            <ProductPurchase variants={currentProduct.variants} />
           </div>
         </div>
+
+        {currentProduct.description && (
+          <section className="mt-12 border-t border-[#D9D8CE] pt-8">
+            <h2 className="text-lg font-semibold text-[#243D2D]">Deskripsi Produk</h2>
+
+            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#526454]">{currentProduct.description}</p>
+          </section>
+        )}
       </div>
     </main>
   );

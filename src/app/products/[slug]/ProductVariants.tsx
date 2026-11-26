@@ -1,11 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ProductVariant } from "@/types/product";
 import QuantitySelector from "./QuantitySelector";
 
 type ProductVariantsProps = {
   variants: ProductVariant[];
+  onSelectionChange?: (
+    selection: {
+      variantUuid: string;
+      quantity: number;
+    } | null,
+  ) => void;
 };
 
 type VariantOption = {
@@ -17,7 +23,7 @@ function getOptionId(uuid: string | null, name: string | null) {
   return uuid ?? name ?? "";
 }
 
-export default function ProductVariants({ variants }: ProductVariantsProps) {
+export default function ProductVariants({ variants, onSelectionChange }: ProductVariantsProps) {
   const availableVariants = variants.filter((variant) => variant.is_available);
 
   const sizes = useMemo<VariantOption[]>(() => {
@@ -61,6 +67,18 @@ export default function ProductVariants({ variants }: ProductVariantsProps) {
 
     return sizeMatches && colorMatches;
   });
+
+  useEffect(() => {
+    if (!selectedVariant?.is_available) {
+      onSelectionChange?.(null);
+      return;
+    }
+
+    onSelectionChange?.({
+      variantUuid: selectedVariant.uuid,
+      quantity: 1,
+    });
+  }, [selectedVariant?.uuid, selectedVariant?.is_available, onSelectionChange]);
 
   const isSizeAvailable = (sizeId: string) => {
     return variants.some((variant) => getOptionId(variant.size.uuid, variant.size.name) === sizeId && variant.is_available);
@@ -136,9 +154,9 @@ export default function ProductVariants({ variants }: ProductVariantsProps) {
                   aria-label={`Pilih warna ${color.name}`}
                   aria-pressed={selected}
                   title={color.name}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-2 transition-colors ${
-                    selected ? "border-[#355640] ring-1 ring-[#355640]" : "border-[#D9D8CE] hover:border-[#355640]"
-                  } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-2 transition-colors ${selected ? "border-[#355640] ring-1 ring-[#355640]" : "border-[#D9D8CE] hover:border-[#355640]"} ${
+                    disabled ? "cursor-not-allowed opacity-40" : ""
+                  }`}
                 >
                   <span
                     className="h-5 w-5 rounded-full border border-black/10"
@@ -167,7 +185,21 @@ export default function ProductVariants({ variants }: ProductVariantsProps) {
           <p className="text-sm text-[#7B8176]">Kombinasi ukuran dan warna ini tidak tersedia.</p>
         )}
       </div>
-      {selectedVariant && <QuantitySelector key={selectedVariant.uuid} stock={selectedVariant.is_available ? selectedVariant.available_stock : 0} />}
+
+      {selectedVariant && (
+        <QuantitySelector
+          key={selectedVariant.uuid}
+          stock={selectedVariant.is_available ? selectedVariant.available_stock : 0}
+          onQuantityChange={(quantity) => {
+            if (!selectedVariant.is_available) return;
+
+            onSelectionChange?.({
+              variantUuid: selectedVariant.uuid,
+              quantity,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

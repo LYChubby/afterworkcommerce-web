@@ -5,36 +5,45 @@ import { Minus, Plus } from "lucide-react";
 
 type QuantitySelectorProps = {
   stock: number;
+  onQuantityChange?: (quantity: number) => void;
 };
 
-export default function QuantitySelector({ stock }: QuantitySelectorProps) {
+export default function QuantitySelector({ stock, onQuantityChange }: QuantitySelectorProps) {
   const maxStock = Math.max(0, stock);
   const [quantity, setQuantity] = useState(1);
 
   const isOutOfStock = maxStock <= 0;
   const currentQuantity = isOutOfStock ? 0 : Math.min(Math.max(quantity, 1), maxStock);
 
+  function updateQuantity(nextQuantity: number) {
+    const normalizedQuantity = Math.min(Math.max(nextQuantity, 1), maxStock);
+
+    setQuantity(normalizedQuantity);
+    onQuantityChange?.(normalizedQuantity);
+  }
+
   function handleDecrease() {
-    setQuantity((current) => Math.max(1, current - 1));
+    if (isOutOfStock) return;
+
+    updateQuantity(currentQuantity - 1);
   }
 
   function handleIncrease() {
-    setQuantity((current) => Math.min(maxStock, current + 1));
+    if (isOutOfStock) return;
+
+    updateQuantity(currentQuantity + 1);
   }
 
   function handleInputChange(value: string) {
-    if (value === "") {
-      setQuantity(1);
-      return;
-    }
+    if (value === "") return;
 
     const parsedValue = Number(value);
 
-    if (!Number.isInteger(parsedValue)) {
+    if (!Number.isInteger(parsedValue) || isOutOfStock) {
       return;
     }
 
-    setQuantity(Math.min(Math.max(parsedValue, 1), maxStock));
+    updateQuantity(parsedValue);
   }
 
   return (
