@@ -1,7 +1,7 @@
 import "client-only";
 
 import type { ApiResponse } from "@/types/api";
-import type { AuthUser, UserProfile } from "@/types/auth";
+import type { AuthUser, UpdateProfilePayload, UserProfile } from "@/types/auth";
 
 export class AuthServiceError extends Error {
   constructor(
@@ -63,6 +63,13 @@ export async function exchangeGoogleCode(code: string): Promise<AuthUser> {
 export async function getCurrentUser(): Promise<UserProfile> {
   return request<UserProfile>("/api/auth/me", {
     method: "GET",
+  });
+}
+
+export async function updateCurrentUser(payload: UpdateProfilePayload): Promise<UserProfile> {
+  return request<UserProfile>("/api/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 

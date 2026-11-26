@@ -16,3 +16,7 @@ export interface AuthTokenResponse {
   token_type: "Bearer";
   user: AuthUser;
 }
+export interface UpdateProfilePayload {
+  name?: string;
+  phone?: string | null;
+}

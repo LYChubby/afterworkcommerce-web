@@ -20,7 +20,7 @@ const publicNavigation = [
   },
   {
     label: "Katalog Produk",
-    href: "/#products",
+    href: "/products",
     icon: ShoppingBag,
   },
   {
@@ -163,7 +163,7 @@ export function SiteSidebar({ expanded, onToggle }: SiteSidebarProps) {
               </div>
             )}
 
-            <LogoutButton />
+            <LogoutButton iconOnly={!expanded} />
           </div>
         ) : status === "unauthenticated" ? (
           <div className="space-y-2">

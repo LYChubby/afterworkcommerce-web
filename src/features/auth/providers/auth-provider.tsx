@@ -2,9 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { AuthServiceError, exchangeGoogleCode, getCurrentUser, loginWithEmailPassword, registerWithEmailPassword, logout as logoutService } from "@/features/auth/services/auth-service";
+import { AuthServiceError, exchangeGoogleCode, getCurrentUser, loginWithEmailPassword, registerWithEmailPassword, updateCurrentUser, logout as logoutService } from "@/features/auth/services/auth-service";
 
-import type { UserProfile } from "@/types/auth";
+import type { UserProfile, UpdateProfilePayload } from "@/types/auth";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -15,6 +15,7 @@ interface AuthContextValue {
   loginWithGoogleCode: (code: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<UserProfile>;
   registerWithEmail: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<UserProfile>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<UserProfile>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -56,6 +57,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       throw error;
     }
+  }, []);
+
+  const updateProfile = useCallback(async (payload: UpdateProfilePayload): Promise<UserProfile> => {
+    const operation = operationRef.current;
+
+    const updatedUser = await updateCurrentUser(payload);
+
+    if (operation === operationRef.current) {
+      setUser(updatedUser);
+      setStatus("authenticated");
+      setError(null);
+    }
+
+    return updatedUser;
   }, []);
 
   useEffect(() => {
@@ -218,6 +233,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loginWithGoogleCode,
         loginWithEmail,
         registerWithEmail,
+        updateProfile,
         refreshUser,
         logout,
       }}
